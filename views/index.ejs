@@ -1,11 +1,81 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
-  </body>
+
+<head>
+  <title><%= title %></title>
+  <link rel='stylesheet' href='/css/style.css' />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+</head>
+
+<body>
+  <h1><%= title %></h1>
+  <p class="mb-5">Last Updated : <%= data.temp[data.temp.length-1].x %></p>
+
+  <div class="card mb-5 p-5 rounded shadow-sm">
+    <div id="temp" class="w-100" style="height: 200px;"></div>
+  </div>
+
+  <div class="card mb-5 p-5 rounded shadow-sm">
+    <div id="humidity" class="w-100" style="height: 200px;"></div>
+  </div>
+
+  <div class="card mb-5 p-5 rounded shadow-sm">
+    <div id="pressure" class="w-100" style="height: 200px;"></div>
+  </div>
+
+  <div class="card mb-5 p-5 rounded shadow-sm">
+    <div id="light" class="w-100" style="height: 200px;"></div>
+  </div>
+
+
+
+  <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+    integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+    crossorigin="anonymous"></script>
+  <script>
+    var data = '<%- JSON.stringify(data) %>';
+    data = JSON.parse(data);
+    console.log(data);
+
+    function drawChart(id, name, y) {
+      const chart = new CanvasJS.Chart(id, {
+        title: {
+          text: name,
+        },
+        axisX: {
+          title: "Time",
+          valueFormatString: "YY/MM/DD hh:mm:ss",
+        },
+        axisY: {
+          title: name,
+        },
+        data: [
+          {
+            type: "line",
+            xValueType: "dateTime",
+            dataPoints: data[id],
+          },
+        ],
+      });
+
+      chart.render();
+    }
+
+    drawChart('temp', 'Tempurature', data.temp);
+    drawChart('humidity', 'Humidity', data.humidity);
+    drawChart('pressure', 'Pressure', data.pressure);
+    drawChart('light', 'Light Intensity', data.light);
+
+  </script>
+</body>
+
 </html>

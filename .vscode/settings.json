@@ -1,0 +1,5 @@
+{
+  "appService.showBuildDuringDeployPrompt": false,
+  "appService.defaultWebAppToDeploy": "/subscriptions/a256a8f8-fd04-4849-81a8-9acaeb1773f3/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/sensor-data",
+  "appService.deploySubpath": ""
+}
