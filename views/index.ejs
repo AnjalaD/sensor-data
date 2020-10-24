@@ -2,31 +2,39 @@
 <html>
 
 <head>
-  <title><%= title %></title>
+  <title>Dashboard | View collected data</title>
   <link rel='stylesheet' href='/css/style.css' />
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
 
 </head>
 
-<body>
-  <h1><%= title %></h1>
-  <p class="mb-5">Last Updated : <%= data.temp[data.temp.length-1].x %></p>
+<body class="py-0">
 
-  <div class="card mb-5 p-5 rounded shadow-sm">
-    <div id="temp" class="w-100" style="height: 200px;"></div>
+  <div class="row py-4">
+    <h1>Dashboard</h1>
+    <form id="form" class="row ml-auto">
+      <input type="date" value="<%= date %>" onchange="selectDate(event)" required />
+      <button>Date</button>
+  </div>
   </div>
 
-  <div class="card mb-5 p-5 rounded shadow-sm">
-    <div id="humidity" class="w-100" style="height: 200px;"></div>
-  </div>
+  <div class="row">
+    <div class="card w-50 p-4 rounded shadow-sm">
+      <div id="temp" class="w-100" style="height: 250px;"></div>
+    </div>
 
-  <div class="card mb-5 p-5 rounded shadow-sm">
-    <div id="pressure" class="w-100" style="height: 200px;"></div>
-  </div>
+    <div class="card w-50 p-4 rounded shadow-sm bg-light">
+      <div id="humidity" class="w-100" style="height: 250px;"></div>
+    </div>
 
-  <div class="card mb-5 p-5 rounded shadow-sm">
-    <div id="light" class="w-100" style="height: 200px;"></div>
+    <div class="card w-50 p-4 rounded shadow-sm bg-light">
+      <div id="pressure" class="w-100" style="height: 250px;"></div>
+    </div>
+
+    <div class="card w-50 p-4 rounded shadow-sm">
+      <div id="light" class="w-100" style="height: 250px;"></div>
+    </div>
   </div>
 
 
@@ -42,6 +50,12 @@
     integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
     crossorigin="anonymous"></script>
   <script>
+    var form = document.getElementById("form");
+    function selectDate(e) {
+      form.setAttribute("action", e.target.value);
+    }
+  </script>
+  <script>
     var data = '<%- JSON.stringify(data) %>';
     data = JSON.parse(data);
     console.log(data);
@@ -51,9 +65,10 @@
         title: {
           text: name,
         },
+        backgroundColor: 'transparent',
         axisX: {
           title: "Time",
-          valueFormatString: "YY/MM/DD hh:mm:ss",
+          valueFormatString: "MMM/DD hh:mm",
         },
         axisY: {
           title: name,
