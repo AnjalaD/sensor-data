@@ -60,11 +60,13 @@
     data = JSON.parse(data);
     console.log(data);
 
-    function drawChart(id, name, y) {
-      const chart = new CanvasJS.Chart(id, {
+    function drawChart(divId, name, y1, y2) {
+      const chart = new CanvasJS.Chart(divId, {
         title: {
           text: name,
         },
+        // animationEnabled: true,
+        zoomEnabled: true,
         backgroundColor: 'transparent',
         axisX: {
           title: "Time",
@@ -77,18 +79,25 @@
           {
             type: "line",
             xValueType: "dateTime",
-            dataPoints: data[id],
+            connectNullData: true,
+            dataPoints: y1,
           },
+          {
+            type: "line",
+            xValueType: "dateTime",
+            connectNullData: true,
+            dataPoints: y2,
+          }
         ],
       });
 
       chart.render();
     }
 
-    drawChart('temp', 'Tempurature', data.temp);
-    drawChart('humidity', 'Humidity', data.humidity);
-    drawChart('pressure', 'Pressure', data.pressure);
-    drawChart('light', 'Light Intensity', data.light);
+    drawChart('temp', 'Tempurature', data.m_temp, data.sd_temp);
+    drawChart('humidity', 'Humidity', data.m_hmd, data.sd_hmd);
+    drawChart('pressure', 'Pressure', data.m_prs, data.sd_prs);
+    drawChart('light', 'Light Intensity', data.m_lit, data.sd_lit);
 
   </script>
 </body>

@@ -24,6 +24,16 @@ function runSql(config, query, action) {
   connection.end();
 }
 
+function calcMean(val, n) {
+  return val / n;
+}
+
+function calcSD(val, val2, n) {
+  return (val2 - (val * 2) / n) / n;
+}
+
+const fields = ["m_hmd", "m_lit", "m_prs", "m_tmp", "sd_hmd", "sd_lit", "sd_prs", "sd_tmp"];
+
 
 /* GET home page. */
 router.get('/:date?', function (req, res) {
@@ -37,19 +47,18 @@ router.get('/:date?', function (req, res) {
   const action = (results) => {
     if (results) {
       console.log(results);
-      var processed = {
-        temp: [],
-        humidity: [],
-        pressure: [],
-        light: [],
-      }
-      results.forEach(({ id, temp, humidity, pressure, light, collected }) => {
-        const timeMilli = moment(collected).unix();
-        const timeStr = moment(collected).format("MMM DD hh:mm");
-        processed.temp.push({ x: timeMilli, y: temp, label: timeStr });
-        processed.humidity.push({ x: timeMilli, y: humidity, label: timeStr });
-        processed.pressure.push({ x: timeMilli, y: pressure, label: timeStr });
-        processed.light.push({ x: timeMilli, y: light, label: timeStr });
+      const processed = {};
+      fields.forEach(field => processed[field] = []);
+
+      results.forEach(row => {
+        const timeMilli = moment(row.collected).unix();
+        const timeStr = moment(row.collected).format("MMM DD hh:mm");
+
+        fields.forEach(field => processed[field].push({
+          x: timeMilli,
+          y: row[field],
+          label: timeStr,
+        }));
       });
       res.render('index', { date, data: processed });
     }
@@ -68,8 +77,18 @@ router.post('/push', function (req, res) {
       const date = moment();
       values.reverse();
       values.forEach((element) => {
-        const { humidity, temperature, light } = element;
-        processed = `("${date.toISOString()}", ${humidity}, ${light}, NULL, ${temperature}), ${processed}`;
+        const { counter, humidity, humidity2, light, light2, pressure, pressure2, temperature, temperature2 } = element;
+        processed = `(
+          "${date.toISOString()}",
+          ${calcMean(humidity, counter)},
+          ${calcMean(light, counter)},
+          ${calcMean(pressure, counter)},
+          ${calcMean(temperature, counter)}),
+          ${calcSD(humidity, humidity2, counter)},
+          ${calcSD(light, light2, counter)},
+          ${calcSD(pressure, pressure2, counter)},
+          ${calcSD(temperature, temperature2, counter)},
+          ${processed}`;
         date.subtract({ minutes: process.env.INTERVAL || 1 });
       });
     } else {
@@ -80,7 +99,7 @@ router.post('/push', function (req, res) {
     console.error(e);
   }
   processed = processed.slice(0, -1);
-  const query = `INSERT INTO data(collected, humidity, light, pressure, temp) VALUES ${processed}; `;
+  const query = `INSERT INTO data(collected,${fields.join(",")}) VALUES ${processed}; `;
   const action = () => {
     res.status(200);
     res.send();
@@ -100,17 +119,21 @@ router.get("/init-db", function (req, res) {
   };
   const connection = mysql.createConnection(config);
   connection.connect();
-  const query = 'drop sensor-data if exists;'
-    + 'create database `sensor - data`;'
-    + 'use `sensor - data`;'
+  const query = 'drop database if exists `sensor-data`;'
+    + 'create database `sensor-data`;'
+    + 'use `sensor-data`;'
     + 'SET GLOBAL sql_mode = "NO_ENGINE_SUBSTITUTION";'
     + 'set global time_zone = "+05:30";'
     + 'create table data('
     + 'id int primary key auto_increment,'
-    + 'temp double,'
-    + 'humidity double,'
-    + 'pressure double,'
-    + 'light double,'
+    + 'm_hmd double,'
+    + 'm_lit double,'
+    + 'm_prs double,'
+    + 'm_tmp double,'
+    + 'sd_hmd double,'
+    + 'sd_lit double,'
+    + 'sd_prs double,'
+    + 'sd_tmp double,'
     + 'collected datetime,'
     + 'received timestamp'
     + ');';
@@ -125,7 +148,7 @@ router.get("/init-db", function (req, res) {
 router.get('/test-push', function (req, res) {
   const connection = mysql.createConnection(config);
   connection.connect();
-  const query = `INSERT INTO data(collected, humidity, light, pressure, temp) VALUES("${new Date().toISOString()}", 75, 100, 1, 26); `;
+  const query = `INSERT INTO data(collected,${fields.join(",")}) VALUES("${new Date().toISOString()}", 75, 100, 1, 26, 1, 1, 1, 1);`;
   const action = () => {
     res.status(200);
     res.send();
