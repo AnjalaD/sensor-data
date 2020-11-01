@@ -1,8 +1,9 @@
 var express = require('express');
 var router = express.Router();
 var moment = require('moment');
-
 var mysql = require('mysql');
+
+// mysql database config
 const config = {
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -11,6 +12,7 @@ const config = {
   database: process.env.DB_NAME,
 };
 
+// execute mysql query
 function runSql(config, query, action) {
   console.log(query);
   const connection = mysql.createConnection(config);
@@ -24,19 +26,23 @@ function runSql(config, query, action) {
   connection.end();
 }
 
+// calculate mean
 function calcMean(val, n) {
   return val / n;
 }
 
+// calcutale sd
 function calcSD(val, val2, n) {
-  return (val2 - (val * 2) / n) / n;
+  return ((val2 - (val ** 2) / n) / n) ** (0.5);
 }
 
+// database table rows
 const fields = ["m_hmd", "m_lit", "m_prs", "m_tmp", "sd_hmd", "sd_lit", "sd_prs", "sd_tmp"];
 
 
 /* GET home page. */
 router.get('/:date?', function (req, res) {
+  console.log({ req: req.params });
   let date;
   if (req.params.date) {
     date = req.params.date;
@@ -70,35 +76,45 @@ router.get('/:date?', function (req, res) {
 
 // store data received from sensors
 router.post('/push', function (req, res) {
-  const values = req.body.params.value;
+  const date = moment();
+  const values = req.body.alert.info;
   let processed = "";
+
+  // process xml data
+  // calculate mean and sd
+  // return string as sql value tuple
+  const process = (element) => {
+    let obj = {};
+    element.parameter.forEach(({ valuename, value }) => {
+      obj[valuename] = parseFloat(value);
+    });
+    const { counter, humidity, humidity2, light, light2, pressure, pressure2, temperature, temperature2 } = obj;
+    return `(
+      "${date.toISOString()}",
+      ${calcMean(humidity, counter)},
+      ${calcMean(light, counter)},
+      ${calcMean(pressure, counter)},
+      ${calcMean(temperature, counter)},
+      ${calcSD(humidity, humidity2, counter)},
+      ${calcSD(light, light2, counter)},
+      ${calcSD(pressure, pressure2, counter)},
+      ${calcSD(temperature, temperature2, counter)}
+      )`;
+  }
   try {
     if (Array.isArray(values)) {
-      const date = moment();
       values.reverse();
       values.forEach((element) => {
-        const { counter, humidity, humidity2, light, light2, pressure, pressure2, temperature, temperature2 } = element;
-        processed = `(
-          "${date.toISOString()}",
-          ${calcMean(humidity, counter)},
-          ${calcMean(light, counter)},
-          ${calcMean(pressure, counter)},
-          ${calcMean(temperature, counter)}),
-          ${calcSD(humidity, humidity2, counter)},
-          ${calcSD(light, light2, counter)},
-          ${calcSD(pressure, pressure2, counter)},
-          ${calcSD(temperature, temperature2, counter)},
-          ${processed}`;
-        date.subtract({ minutes: process.env.INTERVAL || 1 });
+        processed = `${process(element)},${processed}`;
+        date.subtract({ minutes: 15 });
       });
+      processed = processed.slice(0, -1);
     } else {
-      const { humidity, temperature, light } = values;
-      processed = `("${moment().toISOString()}", ${humidity}, ${light} , NULL, ${temperature});`;
+      processed = process(values);
     }
   } catch (e) {
     console.error(e);
   }
-  processed = processed.slice(0, -1);
   const query = `INSERT INTO data(collected,${fields.join(",")}) VALUES ${processed}; `;
   const action = () => {
     res.status(200);
